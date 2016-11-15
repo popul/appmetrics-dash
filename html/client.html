@@ -186,6 +186,18 @@ top: 14em;
 
 <style>
 
+#Event-Loop {
+position:absolute;
+left:26em;
+top:22em;
+z-index: 1;
+}
+
+#loop-chart {
+position: absolute;
+top: 79em;
+}
+
 #CPU-Usage {
 position:absolute;
 left:10em;
@@ -304,7 +316,7 @@ width:100em;
 #canvas{
 position:absolute;
 top:84.5em;
-left:15em;		
+left:15em;
 }
 
 
@@ -394,7 +406,7 @@ top:91em;
 
 #wait-1 {
 position: absolute;
-left:19em;
+left:43em;
 top:87em;
 
 }
@@ -420,6 +432,15 @@ top: 11em;
     </h1>
 
       <table id="test"> <!-- start of defining the objects on the webpage -->
+		
+		<div id="Event-Loop">
+			<span style="font-weight: bold">Event Loop</span>
+			<ul>
+				<li>Min: <span id="eventloop-min">0</span></li>
+				<li>Max: <span id="eventloop-max">0</span></li>
+				<li>Avg: <span id="eventloop-avg">0</span></li>
+			</ul>
+		</div>
 
         <div id="CPU-Usage" style="font-weight: bold">Current CPU Usage</div>
 			<!-- CPU Batteries-->
@@ -447,7 +468,8 @@ top: 11em;
 		            <td  width=500 height=250>  <div id="physical-memory" overall-memory></div> </td>
 					<td  width=400 height=250 > <div id="memory-chart" memory-chart></div> </td>
                    <td width=610 height=250 ><div  id="gc_speed" gcperf-chart></div></td>
-                <td width=580 height=250><div id="gc_size-used" gcheap-chart></div></td>	
+                <td width=580 height=250><div id="gc_size-used" gcheap-chart></div></td>
+                <td width=580 height=250><div id="loop-chart" loop-chart></div></td>
 				<tr>
 					<td colspan=1><div  id="env_table" env-table></div> </td>
 				</tr>				
@@ -517,6 +539,7 @@ top: 11em;
         type="text/javascript" 
         src="https://www.google.com/jsapi">
     </script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.1/lodash.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
     google.load('visualization', '1.1', {packages:['corechart','table','timeline', 'treemap']});
@@ -657,6 +680,7 @@ ctx1.fill();
         function( $scope ) {
 	       //reset the charts							      
 			$scope.cpuChart = {};
+			$scope.loopChart = {};
 			$scope.overallMemory={};
 			$scope.memoryChart={};
 			$scope.memoryC={};
@@ -667,6 +691,17 @@ ctx1.fill();
 			
 			//initial defining of all the google charts
 			
+			$scope.loopChart.options = {
+                title: 'Event loop of application over time',
+                height: 300,
+                width: 575,
+                hAxis: {title: 'Elapsed time (s)'},
+                vAxis: {title: 'Event loop time (ms)'}
+            };
+            $scope.loopChart.data = [
+                ['Time', 'Min', 'Max', 'Avg']
+            ];
+
 			$scope.cpuChart.options = {
                 title: 'CPU Usage of application over time',
                 height: 300,
@@ -744,6 +779,51 @@ ctx1.fill();
             socket = io.connect();
             socket.emit('connected');
             socket.emit('disableprofiling'); //profiling disabled
+
+            socket.on('eventloop', function (data) {
+				
+                var eventLoop = JSON.parse(data);  //parses the data into a JSON array
+                var latency = eventLoop.latency;
+
+				$("#eventloop-min").text((latency.min).toFixed(2)); 
+				$("#eventloop-max").text((latency.max).toFixed(2)); 
+				$("#eventloop-avg").text((latency.avg).toFixed(2));
+
+				//is the cpu chart defined and add data points to it 
+				if ($scope.loopChart.data != undefined) {
+					if ($scope.loopChart.data.length > 60) {//if there are more than 60 data points
+	                    var header = $scope.loopChart.data[0];
+	                    $scope.loopChart.data.shift();
+	                    $scope.loopChart.data[0] = header;
+	                }
+	                $scope.loopChart.data.push([new Date(Number(eventLoop.time)), latency.min, latency.max, latency.avg]);
+	                $scope.$digest();
+				}
+
+			/*
+				var process= cpu['process'];
+				var system=cpu['system'];
+				
+				//edits heights of blocks inside batteries and the values on the key
+				$("#battery-system").css("height", system * 100 + "%"); 
+				$("#battery-process").css("height", process*100 + "%");
+				$("#cpu-system").text((system * 100).toFixed(2) + "%");
+			    $("#cpu-process").text((process * 100).toFixed(2) + "%");
+
+				//is the cpu chart defined and add data points to it 
+				if ($scope.cpuChart.data!=undefined){
+                
+				if ($scope.cpuChart.data.length > 60) {//if there are more than 60 data points
+                    header = $scope.cpuChart.data[0];
+                    $scope.cpuChart.data.shift();
+                    $scope.cpuChart.data[0] = header;
+                }
+                $scope.cpuChart.data.push([new Date(Number(cpu.time)), cpu.process * 100, cpu.system * 100]);
+                $scope.$digest();
+				}
+				*/
+            });
+
 			//cpu parsing
             socket.on('cpu', function (data) {
 				
@@ -795,7 +875,7 @@ ctx1.fill();
             });
 			
 			//gc data parsing 			
-            socket.on('gc', function (data) {
+            socket.on('gc', _.throttle(function (data) {
                 gc = JSON.parse(data);
 				//add data to the gc charts
                 if ($scope.gcheapChart.data.length > 60) { //if there are more than 60 data points
@@ -810,7 +890,7 @@ ctx1.fill();
                     $scope.gcperfChart.data[0] = header;
                 }
 				//add to arrays for the speed dials 
-				total_gc_data.push([new Date(Number(gc.time)), Number(gc.duration)]);     
+				//total_gc_data.push([new Date(Number(gc.time)), Number(gc.duration)]);     
 		    	past_min_gc_data.push([Number(gc.time), Number(gc.duration)]);
 				
 				test=false; 
@@ -831,7 +911,7 @@ ctx1.fill();
 					frequency+=past_min_gc_data[i][1];
 					}
 					
-				frequencies.push(frequency);
+				//frequencies.push(frequency);
 			
 				for (i=0 ; i<counter ; i++){ //removes "counter" number of points from the front of the "frequency" array
 					past_min_gc_data.shift();
@@ -937,7 +1017,7 @@ ctx1.fill();
 				$scope.gcperfChart.data.push([new Date(Number(gc.time)), Number(gc.duration)]);				
                 $scope.$digest();
 		
-            });
+            }, 1000));
 			
 			
 			socket.on('environment', function (data) { ///data for environment table
@@ -1268,7 +1348,7 @@ ctx1.fill();
  
  
 //Next set of methods draw the google charts
- 
+
  var cpuGlobalChart;
  app.directive('cpuChart',function (){
    return { 
@@ -1285,6 +1365,21 @@ ctx1.fill();
    };
 });
 
+ var loopGlobalChart;
+ app.directive('loopChart',function (){
+   return { 
+      restrict: 'A',
+      link: function ($scope, elm, attrs) {
+        $scope.$watch('loopChart', function () {
+            if (typeof loopGlobalChart !== 'undefined') loopGlobalChart.clearChart();
+            loopGlobalChart = new google.visualization.LineChart(elm[0]);
+            if (typeof $scope.loopChart.data !== 'undefined' && $scope.loopChart.data.length > 1) {
+                loopGlobalChart.draw(google.visualization.arrayToDataTable($scope.loopChart.data), $scope.loopChart.options);
+            }
+        },true);
+      }
+   };
+});
 
  var overallMemoryGlobalC;
  app.directive('overallMemory',function (){
