@@ -1,6 +1,6 @@
 {
   "name": "appmetrics-dash-eventloop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Monitoring Dashboard for Node Application Metrics",
   "main": "index.js",
   "dependencies": {
@@ -19,9 +19,9 @@
     "monitoring"
   ],
   "author": "",
-  "repository" : {
-    "type" : "git",
-    "url" : "git://github.com/popul/appmetrics-dash.git"
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/popul/appmetrics-dash.git"
   },
   "license": "Apache-2.0"
 }
