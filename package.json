@@ -1,5 +1,5 @@
 {
-  "name": "appmetrics-dash",
+  "name": "appmetrics-dash-eventloop",
   "version": "1.0.0",
   "description": "Monitoring Dashboard for Node Application Metrics",
   "main": "index.js",
@@ -21,7 +21,7 @@
   "author": "",
   "repository" : {
     "type" : "git",
-    "url" : "git://github.com/RuntimeTools/appmetrics-dash.git"
+    "url" : "git://github.com/popul/appmetrics-dash.git"
   },
   "license": "Apache-2.0"
 }

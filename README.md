@@ -5,12 +5,18 @@ A data visualizer that uses "[ Node Application Metrics][1]" (appmetrics) to mon
 ### Prerequisites
 The Node Application Metrics Dashboard supports all versions of Node.js and io.js supported by 'appmetrics'.
 
+### Install 
+
+```
+npm install appmetrics-dash-eventloop
+```
+
 ### Configuration
 
-In order to configure an application to be monitored by appmetrics-dash, the following line of code must be added to the application. 
+In order to configure an application to be monitored by appmetrics-dash-eventloop, the following line of code must be added to the application. 
 
 ```sh
-var app = require('appmetrics-dash').start(config);  
+var app = require('appmetrics-dash-eventloop').start(config);  
 ```
 Where the optional `config` parameter is an options hash as follows:
 * `server`: A pre-existing http server to use. If not specified one is created.
@@ -21,8 +27,8 @@ Where the optional `config` parameter is an options hash as follows:
 
 This line will do one of 2 things, depending on the monitored application:
 
-1.  If no config is provided, or no server is specified in the config, appmetrics-dash will create its own HTTP server (default port 3000).
-2.    If a server is provided in the config, appmetrics-dash will reuse that server.
+1.  If no config is provided, or no server is specified in the config, appmetrics-dash-eventloop will create its own HTTP server (default port 3000).
+2.    If a server is provided in the config, appmetrics-dash-eventloop will reuse that server.
 
 ### Data Visualisation
 
